@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Speed Typing</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="script.js" defer></script>
+</head>
+
+<body>
+    <div class="container">
+        <div class="params">
+            <div class="time">Time
+                <div id="time-count">60s</div>
+            </div>
+            <div class="speed">Speed(WPM)
+                <div id="speed-count">0</div>
+            </div>
+            <div class="accuracy">Accuracy
+                <div id="accuracy-count">100%</div>
+            </div>
+        </div>
+        <p  id="word-input"></p>
+
+        <div class="buttons">
+            <button id="reset">
+                reset
+            </button>
+
+            <button id="option1"  onclick="setOption(1)">60s</button>
+            <button id="option2"  onclick="setOption(2)">30s</button>
+            <button id="option3"  onclick="setOption(3)">15s</button>
+        </div>
+        
+    </div>
+    <textarea id="hidden-input"></textarea>
+
+</body>
+
+</html>
