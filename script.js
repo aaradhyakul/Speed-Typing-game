@@ -1,236 +1,156 @@
-const randomTextUrl = 'https://api.quotable.io/random'
-const textArea = document.querySelector("#word-input")
-const hiddenArea = document.querySelector('#hidden-input')
-const accuracy = document.querySelector('#accuracy-count')
-let charIndex = 0
-let correctCount = 0
-let incorrectCount = 0
-let wordCount = 0
-let wordIndex = 0
-let textWords = []
-let cumulativeWordCount = 0
-let startTime
-let elapsedTime
-let option = window.localStorage.getItem("option")
-let timeLeft = document.querySelector("#time-count")
-timeLeft.innerText = option + "s"
+const textArea = document.querySelector("#word-input");
+const hiddenArea = document.querySelector('#hidden-input');
+const accuracy = document.querySelector('#accuracy-count');
+const wpm = document.querySelector("#speed-count");
+const timeLeft = document.querySelector("#time-count");
+const resetbtn = document.querySelector("#reset");
 
-let correctChars = 0
-let wrongChars = 0
-let i = 0
-let j=0
+let charIndex = 0;
+let correctChars = 0;
+let wrongChars = 0;
+let wordCount = 0;
+let startTime;
+let elapsedTime;
+let option = window.localStorage.getItem("option") || 60;
+let currentText = "";
 
+timeLeft.innerText = option + "s";
 
+const predefinedTexts = [
+	"The quick brown fox jumps over the lazy dog while the sun sets in the distance.",
+	"Programming is the art of telling another human what one wants the computer to do.",
+	"Success is not final, failure is not fatal: it is the courage to continue that counts.",
+	"In three words I can sum up everything I've learned about life: it goes on.",
+	"The best way to predict the future is to create it yourself.",
+	"Every great developer you know got there by solving problems they were unqualified to solve.",
+	"Life is like riding a bicycle. To keep your balance, you must keep moving forward.",
+	"Technology is best when it brings people together and helps solve real-world problems.",
+	"The only way to do great work is to love what you do and never give up on your dreams.",
+	"Debugging is twice as hard as writing the code in the first place.",
+	"The internet is not just a technology, it's a way of life and communication.",
+	"Innovation distinguishes between a leader and a follower in the modern world.",
+	"The computer was born to solve problems that did not exist before its creation.",
+	"Learning to code is learning to create and innovate in the digital age.",
+	"The best error message is the one that never shows up during development.",
+	"Sometimes the questions are complicated and the answers are simple.",
+	"Good code is its own best documentation, making it easy to understand.",
+	"The only limit to our realization of tomorrow will be our doubts of today.",
+	"Every expert was once a beginner who never gave up on their journey.",
+	"Simplicity is the ultimate sophistication in both life and coding."
+];
 
-const resetbtn = document.querySelector("#reset")
-
-const wpm = document.querySelector("#speed-count")
-
-function fetchRandomText() {
-    return fetch(randomTextUrl).then(response => response.json()).then(data => data.content)
+function getRandomText() {
+	return predefinedTexts[Math.floor(Math.random() * predefinedTexts.length)];
 }
 
-async function getNextText() {
-    const Text = await fetchRandomText()
-    Text.split("").forEach(char => {
-        let charTag = `<span>${char}</span>`
-        textArea.innerHTML += charTag;
-    })
-
-    textWords = []
-    Text.split(" ").forEach(word => textWords.push(word))
-
-    document.addEventListener('keydown', () => hiddenArea.focus())
-    textArea.addEventListener('click', () => hiddenArea.focus())
-
+function initializeText() {
+	textArea.innerHTML = "";
+	currentText = getRandomText();
+	currentText.split("").forEach(char => {
+		const span = document.createElement('span');
+		span.textContent = char;
+		textArea.appendChild(span);
+	});
+	const chars = textArea.querySelectorAll("span");
+	chars[0].classList.add("active");
 }
-
-hiddenArea.addEventListener('input', typingStarted)
-hiddenArea.addEventListener('input', timerStart, { once: true })
-hiddenArea.addEventListener('input', timeElapsed, { once: true })
-hiddenArea.addEventListener('input', displayWords, { once: true })
-hiddenArea.addEventListener('input', displayResult, { once: true })
-
-function countWords() {
-    let hiddenWords = hiddenArea.value.split(" ")
-    wordCount = cumulativeWordCount
-    for (let i = 0; i < hiddenWords.length; i++) {
-        if (hiddenWords[i] === textWords[i]) {
-            wordCount++
-            // console.log(wordCount)
-
-        }
-    }
-}
-function timerStart() {
-    startTime = performance.now()
-
-
-}
-
-resetbtn.addEventListener('click', () => resetApp())
 
 function resetApp() {
-    document.location.reload()
-
+	location.reload();
 }
 
-// function displayResult(){
+function startTimer() {
+	startTime = Date.now();
+	const timer = setInterval(() => {
+		if (!startTime) return;
 
-// }
+		elapsedTime = Math.floor((Date.now() - startTime) / 1000);
+		const remainingTime = option - elapsedTime;
 
-function timeElapsed() {
+		if (remainingTime <= 0) {
+			timeLeft.innerText = "0s";
+			hiddenArea.disabled = true;
+			clearInterval(timer);
+			saveResults();
+			return;
+		}
 
-    setInterval(() => {
-        if (elapsedTime == option) {
-            timeLeft.innerText = 0 + "s"
-            hiddenArea.remove()
-            displayResult()
-            // console.log("over")
-            // console.log(elapsedTime + " "+ option)
-            return;
-        }
-        currentTime = performance.now();
-        elapsedTime = Math.floor((currentTime - startTime) / 1000)
-        timeLeft.innerText = option - elapsedTime + "s"
-
-
-    }, 500)
-
-
-
-
+		timeLeft.innerText = remainingTime + "s";
+		updateStats();
+	}, 1000);
 }
 
-function displayWords() {
-    setInterval(() => {
-        countWords()
-
-        wpm.innerText = Math.floor(wordCount * 60 / elapsedTime)
-        accuracy.innerText = (correctChars * 100 / (correctChars + wrongChars)).toFixed(1) + "%"
-    }
-        , 1000)
-
+function updateStats() {
+	if (elapsedTime > 0) {
+		const wordsPerMinute = Math.floor((wordCount * 60) / elapsedTime);
+		wpm.innerText = wordsPerMinute;
+		const accuracyValue = ((correctChars * 100) / (correctChars + wrongChars)) || 0;
+		accuracy.innerText = accuracyValue.toFixed(1) + "%";
+	}
 }
 
-// function displayResult(){
-//     setInterval(()=>{
-//         if(timeLeft.innerText<=0){
-//             window.localStorage.setItem("wpm",wpm.innerText)
-//             window.localStorage.setItem("accuracy", accuracy.innerText)
-//             window.localStorage.setItem("option",option)
-
-//             // resetApp()
-
-//         }
-//         // console.log("hi")
-//     },100)
-// }
-
-
-function displayResult() {
-    window.localStorage.setItem("wpm", wpm.innerText)
-    window.localStorage.setItem("accuracy", accuracy.innerText)
-    window.localStorage.setItem("option", option)
-    // hiddenArea.blur()
-    // hiddenArea.remove()
-
-
-
-
+function saveResults() {
+	localStorage.setItem("wpm", wpm.innerText);
+	localStorage.setItem("accuracy", accuracy.innerText);
+	localStorage.setItem("option", option);
 }
 
+function handleTyping(e) {
+	const chars = textArea.querySelectorAll("span");
+	const typedChar = e.target.value;
 
-function typingStarted() {
+	if (typedChar.length < charIndex) {
+		charIndex = typedChar.length;
+		chars.forEach(span => span.classList.remove("active"));
+		if (charIndex < chars.length) {
+			chars[charIndex].classList.add("active");
+		}
+		return;
+	}
 
-    const chars = textArea.querySelectorAll("span")
-    let typedChar = hiddenArea.value.split("")[charIndex];
+	const currentChar = chars[charIndex];
+	const typedValue = typedChar[charIndex];
 
-    
+	if (currentChar && typedValue) {
+		if (currentChar.textContent === typedValue) {
+			currentChar.classList.add("correct");
+			correctChars++;
+		} else {
+			currentChar.classList.add("incorrect");
+			wrongChars++;
+		}
 
-    if (typedChar == null) {
-        chars[charIndex].classList.remove("active")
-        charIndex--
-        chars[charIndex].classList.add("active")
-        chars[charIndex].classList.remove("correct")
-        chars[charIndex].classList.remove("incorrect")
-    }
-    else {
-        if (chars[charIndex] === " " && typedChar !== " ") {
-            newSpan = document.createElement('span')
-            newSpan.innerText = typedChar
-            textArea.insertBefore(newSpan, textArea[charIndex])
-        }
-        else {
+		chars.forEach(span => span.classList.remove("active"));
+		charIndex++;
 
-            if (chars[charIndex].textContent === typedChar) {
-                chars[charIndex].classList.add("correct")
-                correctChars++
+		if (typedValue === " ") {
+			wordCount++;
+		}
 
+		if (charIndex >= chars.length) {
+			wordCount++;
+			charIndex = 0;
+			e.target.value = "";
+			initializeText();
+			return;
+		}
 
-
-            }
-            else {
-                chars[charIndex].classList.add("incorrect")
-                wrongChars++
-
-
-            }
-            charIndex++
-        }
-        if (textArea.childElementCount === charIndex) {
-            textArea.innerHTML = ""
-            hiddenArea.value = ""
-            charIndex = 0;
-            cumulativeWordCount = wordCount
-
-
-
-
-            getNextText()
-        }
-        chars.forEach((spanTag) => spanTag.classList.remove("active"))
-        chars[charIndex].classList.add("active")
-    }
-
+		if (charIndex < chars.length) {
+			chars[charIndex].classList.add("active");
+		}
+	}
 }
-
 
 function setOption(opt) {
-
-
-    if (opt === 1) {
-        window.localStorage.setItem("option", 60)
-        // resetApp()
-
-        timeLeft.innerText = 60 + "s"
-
-    }
-    if (opt === 2) {
-        window.localStorage.setItem("option", 30)
-        // resetApp()
-
-
-        timeLeft.innerText = 30 + "s"
-
-    }
-    if (opt === 3) {
-        window.localStorage.setItem("option", 15)
-        // resetApp()
-
-        timeLeft.innerText = 15 + "s"
-    }
-    resetApp()
-
-
+	option = opt === 1 ? 60 : opt === 2 ? 30 : 15;
+	localStorage.setItem("option", option);
+	resetApp();
 }
 
+hiddenArea.addEventListener('input', handleTyping);
+hiddenArea.addEventListener('focus', startTimer, { once: true });
+resetbtn.addEventListener('click', resetApp);
+document.addEventListener('keydown', () => hiddenArea.focus());
+textArea.addEventListener('click', () => hiddenArea.focus());
 
-// function displayResult(){
-//     window.localStorage.setItem("wpm",wpm.innerText)
-// }
-
-getNextText()
-
-
-
+initializeText();
